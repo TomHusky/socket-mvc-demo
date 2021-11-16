@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
+    <script type="text/javascript" src="http://vuejs.org/js/vue.min.js"></script>
+    <script type="text/javascript" src="http://unpkg.com/view-design/dist/iview.min.js"></script>
+    <style>
+        html {
+            margin: 0 auto;
+        }
+
+        #app {
+            display: flex;
+        }
+
+        .left {
+            width: 50%;
+        }
+
+        .right {
+            margin: 50px 0;
+            width: 50%;
+            border-left: 1px solid #999;
+        }
+
+        .right div {
+            margin: 20px 50px;
+        }
+
+        .right H3 {
+            text-align: center;
+        }
+
+        .send {
+            text-align: center;
+            margin: 50px auto;
+        }
+
+        .content {
+            margin: 50px auto;
+            width: 500px;
+            padding: 50px 20px;
+            border: 1px solid #999;
+        }
+
+        .content div {
+            margin: 10px 0;
+        }
+
+        .info1 {
+            background-color: #87d068 !important;
+        }
+
+        .text-msg {
+            padding: 6px 10px;
+            margin-left: 10px;
+            max-width: 330px;
+            min-height: 36px;
+            line-height: 24px;
+            box-sizing: border-box;
+            font-size: 14px;
+            text-align: left;
+            word-break: break-all;
+            background-color: #FFFFFF;
+            border: 1px solid #ECECEC;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="left">
+            <div class="send">
+                <i-form inline>
+                    <FormItem prop="password">
+                        <i-input v-model="value" placeholder="输入消息内容" style="width: 400px" />
+                    </FormItem>
+                    <FormItem>
+                        <i-button type="info" @click="send">发送</i-button>
+                    </FormItem>
+                </i-form>
+            </div>
+
+            <div class="content">
+                <div v-for="item in content">
+                    <Avatar size="35" v-if="item.type==1" style="background-color:#87d068;display: inline-block;"
+                        size="large">服务端
+                    </Avatar>
+                    <Avatar size="35" v-if="item.type==2" style="background-color: #007ACC;display: inline-block;"
+                        size="large">客户端
+                    </Avatar>
+                    <span class="text-msg" :class="">{{item.msg}}</span>
+                </div>
+            </div>
+        </div>
+        <div class="right">
+            <H3>消息发送详情</H3>
+            <div v-for="item in info">
+                <span v-text="item.type==1?'服务端':'客户端'"></span>:
+                <span class="text-msg" :class="{info1:item.type==1}">{{item.data}}</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="./websocket.js"></script>
+    <script src="./receive.js"></script>
+    <script src="./sendMsg.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                websock: null,
+                value: '',
+                token: 'b6j7s1b1w2d9w6p9m2x8n9k3i0j3p8s9',
+                content: [{
+                    msg: "发送消息试试吧！",
+                    type: 1,
+                }],
+                info: [],
+            },
+            mounted() {
+                window.addData = this.addData;
+                window.addInfo = this.addInfo;
+            },
+            created() {
+                this.initWebSocket();
+            },
+            destroyed() {
+                //离开路由之后断开websocket连接
+                // this.websock.close()
+            },
+            methods: {
+                initWebSocket() {
+                    websocket.bulidWebsocket(
+                        "ws://127.0.0.1:8080/demo/websocket",
+                        this.token,
+                        this.wsOpen,
+                        receive,
+                        this.wsError
+                    );
+                },
+                wsOpen() {
+                    //连接建立之后执行send方法发送数据
+                    console.log("连接成功");
+                },
+                wsError() {
+                    alert('连接失败');
+                },
+                send() {
+                    let c = {
+                        type: 2,
+                        msg: this.value,
+                    }
+                    this.addData(c, 2);
+                    sendMsg.sendText(this.value);
+                },
+                addInfo(data, type) {
+                    let m = {
+                        type: type,
+                        data: data,
+                    }
+                    this.info.push(m);
+                },
+                addData(body, type) {
+                    let c = {
+                        type: type,
+                        msg: body,
+                    }
+                    this.content.push(c);
+                },
+            }
+        })
+    </script>
+</body>
